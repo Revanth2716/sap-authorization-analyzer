@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Segregation of duties')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('sod')}"></nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Segregation of duties</h1>
+    <p>Every rule, and who breaks it. A rule that nobody breaks is a rule that
+      works; a rule with three people on it is a rule that is not.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Rules</div>
+      <div class="value" th:text="${ruleCount}">0</div>
+      <div class="sub">defined in the landscape</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Rules broken</div>
+      <div class="value critical" th:text="${brokenCount}">0</div>
+      <div class="sub">at least one person breaks it</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Assignments in conflict</div>
+      <div class="value critical" th:text="${conflictUserCount}">0</div>
+      <div class="sub">person and system combinations</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>The rules</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>Role A</th><th>Role B</th><th>Severity</th>
+            <th>Why</th><th>Who breaks it</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="entry : ${board}">
+            <td class="nowrap"><code th:text="${entry.key.ruleId}">SD01</code></td>
+            <td class="nowrap"><code th:text="${entry.key.roleA}">ZHR_ADMIN</code></td>
+            <td class="nowrap"><code th:text="${entry.key.roleB}">ZHR_PAYROLL</code></td>
+            <td class="nowrap">
+              <span class="sev" th:classappend="${entry.key.severity == 'CRITICAL'}
+                      ? 'sev-critical' : 'sev-high'"
+                    th:text="${entry.key.severity}">CRITICAL</span>
+            </td>
+            <td class="muted small" th:text="${entry.key.description}">Why</td>
+            <td>
+              <span class="pill status-failed" th:each="u : ${entry.value.keySet()}"
+                    th:text="${u}">DEVADMIN</span>
+              <span class="muted" th:if="${#lists.isEmpty(entry.value)}">nobody</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Who reaches what <span class="hint">the blast radius</span></h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>User</th><th>System</th><th>Roles</th><th>Atomic roles</th>
+            <th>Sensitive objects</th><th>Conflicts</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="e : ${exposures}">
+            <td class="nowrap" th:text="${e.userId}">DEVADMIN</td>
+            <td class="nowrap" th:text="${e.systemId}">PRD</td>
+            <td class="muted small" th:text="${e.roleList}">ZABAP_ADMIN</td>
+            <td class="nowrap muted small" th:text="${#lists.size(e.atomicRoles)}">2</td>
+            <td>
+              <span class="pill status-failed" th:each="o : ${e.sensitiveObjects}"
+                    th:text="${o}">F_OB01</span>
+              <span class="muted" th:if="${#lists.isEmpty(e.sensitiveObjects)}">-</span>
+            </td>
+            <td class="nowrap">
+              <span class="pill status-failed" th:if="${not #lists.isEmpty(e.conflicts)}"
+                    th:text="${#lists.size(e.conflicts)} + ' rule(s)'">1 rule(s)</span>
+              <span class="muted" th:if="${#lists.isEmpty(e.conflicts)}">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

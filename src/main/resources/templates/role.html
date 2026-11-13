@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${role.roleName})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('overview')}"></nav>
+
+<div class="page" th:with="a=${assessment}, r=${role}">
+  <div class="page-head">
+    <div class="between">
+      <div>
+        <h1>
+          <span th:text="${r.roleName}">ZFI_TABLE_ADMIN</span>
+          <span class="pill" th:text="${r.roleType}">SINGLE</span>
+          <span class="sev" th:classappend="${a.severity.cssClass}"
+                th:text="${a.severity.label}">Status</span>
+        </h1>
+        <p th:text="${r.description} + ' · owner ' + ${r.owner} + ' · ' + ${r.status}">
+          Description</p>
+      </div>
+      <div class="scorebox">
+        <div class="label">Governance score</div>
+        <div class="value" th:classappend="${a.severity.cssClass()}"
+             th:text="${a.score}">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice notice-ok" th:if="${revoked}">
+    The assignment has been revoked. The governance score has been recalculated.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Holders</div>
+      <div class="value" th:text="${#lists.size(a.users)}">0</div>
+      <div class="sub">people who hold it</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Atomic roles</div>
+      <div class="value" th:text="${#lists.size(a.atomicRoles)}">0</div>
+      <div class="sub">what it expands to</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Authorisation values</div>
+      <div class="value" th:text="${a.valueCount()}">0</div>
+      <div class="sub">what it actually grants</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Sensitive values</div>
+      <div class="value" th:classappend="${#lists.isEmpty(a.sensitiveValues)} ? '' : 'critical'"
+           th:text="${#lists.size(a.sensitiveValues)}">0</div>
+      <div class="sub">sensitive objects granted</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Findings</div>
+      <div class="value" th:text="${a.findingCount()}">0</div>
+      <div class="sub">each with an action</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>What is wrong with this role</h2>
+    <div class="findings" th:if="${not #lists.isEmpty(a.findings)}">
+      <div class="finding" th:each="f : ${a.findings}">
+        <div class="finding-head">
+          <span class="sev" th:classappend="${f.severity.cssClass}"
+                th:text="${f.severity.label}">Severity</span>
+          <span class="pill" th:text="${f.category}">CATEGORY</span>
+        </div>
+        <div class="finding-message" th:text="${f.message}">Message</div>
+        <div class="finding-action">
+          <strong>Do this:</strong> <span th:text="${f.recommendation}">Action</span>
+        </div>
+      </div>
+    </div>
+    <div class="notice notice-ok" th:if="${#lists.isEmpty(a.findings)}">
+      Nothing is wrong with this role - it grants nothing sensitive, nobody
+      breaks a rule with it, and it is the same in every system.
+    </div>
+  </div>
+
+  <div class="panel" th:if="${not #lists.isEmpty(a.atomicRoles)}">
+    <h2>What it expands to</h2>
+    <div class="flex">
+      <span class="pill" th:each="atomic : ${a.atomicRoles}"
+            th:text="${atomic}">ZABAP_DEV</span>
+    </div>
+    <p class="muted small mt" th:if="${r.composite}">
+      A composite role grants nothing itself. What it grants is everything the
+      roles underneath it grant - which is why the conflicts underneath it are
+      conflicts everybody who holds it has.
+    </p>
+  </div>
+
+  <div class="panel" th:if="${not #lists.isEmpty(a.driftSystems)}">
+    <h2>Authorisation drift</h2>
+    <p class="muted small">
+      The role is not the same in every system. The target system is
+      <span th:text="${targetSystem}">PRD</span>.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Direction</th><th>Authorisation value</th></tr></thead>
+        <tbody>
+          <tr th:each="v : ${a.missingInTarget}">
+            <td class="nowrap">
+              <span class="pill status-failed">missing in the target</span>
+            </td>
+            <td><code th:text="${v.display}">F_BKPF_BUKR / ACTVT = 4000</code></td>
+          </tr>
+          <tr th:each="v : ${a.extraInTarget}">
+            <td class="nowrap">
+              <span class="pill status-warning">only in the target</span>
+            </td>
+            <td><code th:text="${v.display}">F_BKPF_BUKR / ACTVT = 4000</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="panel">
+      <h2>Authorisation values per system</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>System</th><th>Values</th></tr></thead>
+          <tbody>
+            <tr th:each="entry : ${a.valuesBySystem}">
+              <td class="nowrap" th:text="${entry.key}">PRD</td>
+              <td>
+                <span class="pill" th:each="v : ${entry.value}"
+                      th:text="${v.display}">F_OB01 / ACTVT = *</span>
+                <span class="muted" th:if="${#lists.isEmpty(entry.value)}">nothing</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Who holds it</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>User</th><th></th></tr></thead>
+          <tbody>
+            <tr th:each="u : ${a.users}">
+              <td class="nowrap" th:text="${u}">DEVADMIN</td>
+              <td class="nowrap">
+                <form th:if="${currentRole == 'SECURITY_ADMIN'}"
+                      th:action="@{'/roles/' + ${r.roleName} + '/revoke'}" method="post"
+                      style="margin:0">
+                  <input type="hidden" name="systemId" th:value="${targetSystem}">
+                  <input type="hidden" name="userId" th:value="${u}">
+                  <button class="secondary small" type="submit">Revoke</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(a.users)}">
+              <td colspan="2" class="muted center">Nobody holds this role.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Overview')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: nav('overview')}"></nav>
+
+<div class="page">
+  <div class="page-head">
+    <h1>Access governance</h1>
+    <p>Who in production can reach something they should not, and which roles are
+      quietly drifting apart between the systems.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Roles</div>
+      <div class="value" th:text="${roleCount}">0</div>
+      <div class="sub">in the landscape</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Critical roles</div>
+      <div class="value critical" th:text="${criticalCount}">0</div>
+      <div class="sub">grant something sensitive</div>
+    </div>
+    <div class="kpi">
+      <div class="label">High roles</div>
+      <div class="value high" th:text="${highCount}">0</div>
+      <div class="sub">need attention this month</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Exposed in production</div>
+      <div class="value critical" th:text="${exposedUserCount}">0</div>
+      <div class="sub">can reach a sensitive object</div>
+    </div>
+    <div class="kpi">
+      <div class="label">In conflict</div>
+      <div class="value critical" th:text="${conflictingUserCount}">0</div>
+      <div class="sub">break a segregation rule</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Who can reach what <span class="hint">in production</span></h2>
+    <div class="chart-wrap" th:utext="${exposureChart}"></div>
+    <p class="muted small mt">
+      A chip is a sensitive authorisation object the person ends up with once
+      the composite roles are expanded. A red marker means the same person is
+      also in a segregation-of-duties conflict.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Governance score by role <span class="hint">worst first</span></h2>
+    <div class="chart-wrap" th:utext="${scoreChart}"></div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="panel">
+      <h2>Roles</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Type</th><th>Owner</th><th>Holders</th>
+              <th>Values</th><th>Score</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="a : ${assessments}">
+              <td class="nowrap">
+                <a th:href="@{'/roles/' + ${a.role.roleName}}"
+                   th:text="${a.role.roleName}">ZFI_TABLE_ADMIN</a>
+              </td>
+              <td class="nowrap muted small" th:text="${a.role.roleType}">SINGLE</td>
+              <td class="nowrap muted small" th:text="${a.role.owner}">OWNER</td>
+              <td class="nowrap" th:text="${#lists.size(a.users)}">0</td>
+              <td class="nowrap" th:text="${a.valueCount()}">0</td>
+              <td class="nowrap"><strong th:text="${a.score}">0</strong></td>
+              <td class="nowrap">
+                <span class="sev" th:classappend="${a.severity.cssClass}"
+                      th:text="${a.severity.label}">Status</span>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(assessments)}">
+              <td colspan="7" class="muted center">No roles found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Findings <span class="hint">most severe first</span></h2>
+      <div class="findings">
+        <div class="finding" th:each="f : ${findings}">
+          <div class="finding-head">
+            <span class="sev" th:classappend="${f.severity.cssClass}"
+                  th:text="${f.severity.label}">Severity</span>
+            <a class="finding-system" th:href="@{'/roles/' + ${f.subject}}"
+               th:text="${f.subject}">ZFI_TABLE_ADMIN</a>
+            <span class="pill" th:text="${f.category}">CATEGORY</span>
+          </div>
+          <div class="finding-message" th:text="${f.message}">Message</div>
+          <div class="finding-action">
+            <strong>Do this:</strong> <span th:text="${f.recommendation}">Action</span>
+          </div>
+        </div>
+        <div class="muted center" th:if="${#lists.isEmpty(findings)}">
+          No findings - every role is clean.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent activity</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr th:each="entry : ${audit}">
+            <td class="muted small nowrap" th:text="${entry.atDisplay}">TS</td>
+            <td class="nowrap" th:text="${entry.username}">USER</td>
+            <td class="nowrap"><span class="pill" th:text="${entry.action}">ACTION</span></td>
+            <td class="muted small" th:text="${entry.detail}">DETAIL</td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(audit)}">
+            <td colspan="4" class="muted center">No activity recorded yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>

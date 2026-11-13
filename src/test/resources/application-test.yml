@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:accesstest;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    root: WARN
+    com.revzz.sap.access: INFO
+
+access:
+  application-name: "SAP Authorisation & Access Governance Analyzer"
+  sap-system: "PFCG"
+  gateway: "local"
+  seed-demo-users: true
+  seed-demo-data: true
+  demo-password: "demo1234"
+  seed:
+    random-seed: 20261113
+  policy:
+    orphan-role-days: 90
+    max-drift-systems: 0
+    max-composite-expansion: 5
